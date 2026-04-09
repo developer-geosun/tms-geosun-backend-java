@@ -1,0 +1,91 @@
+package com.geosun.tms.auth.security.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.geosun.tms.auth.repository.RefreshTokenRepository;
+import com.geosun.tms.auth.repository.UserRepository;
+import com.geosun.tms.auth.security.SecurityErrorWriter;
+import com.geosun.tms.auth.security.jwt.JwtAuthenticationFilter;
+import com.geosun.tms.auth.security.jwt.JwtService;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
+
+/**
+ * Stateless JWT, публічні auth-маршрути, DELETE /users/** лише для ADMIN.
+ */
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+@EnableConfigurationProperties(JwtProperties.class)
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter,
+                                                   ObjectMapper objectMapper) throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable);
+        http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs",
+                        "/v3/api-docs/**").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/verify-email",
+                        "/api/v1/auth/resend-verification",
+                        "/api/v1/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**").hasRole("ADMIN")
+                .anyRequest().authenticated());
+
+        http.exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, e) -> SecurityErrorWriter.writeJson(
+                        response,
+                        objectMapper,
+                        HttpServletResponse.SC_UNAUTHORIZED,
+                        "Unauthorized",
+                        "UNAUTHORIZED",
+                        "Authentication required",
+                        request.getRequestURI()))
+                .accessDeniedHandler((request, response, e) -> SecurityErrorWriter.writeJson(
+                        response,
+                        objectMapper,
+                        HttpServletResponse.SC_FORBIDDEN,
+                        "Forbidden",
+                        "FORBIDDEN",
+                        "Access denied",
+                        request.getRequestURI())));
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService,
+                                                           UserRepository userRepository,
+                                                           RefreshTokenRepository refreshTokenRepository,
+                                                           ObjectMapper objectMapper) {
+        return new JwtAuthenticationFilter(jwtService, userRepository, refreshTokenRepository, objectMapper);
+    }
+}
