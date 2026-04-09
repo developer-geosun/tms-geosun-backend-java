@@ -1,6 +1,8 @@
 package com.geosun.tms.auth.security.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.geosun.tms.auth.config.AppEmailProperties;
+import com.geosun.tms.auth.config.RateLimitProperties;
 import com.geosun.tms.auth.repository.RefreshTokenRepository;
 import com.geosun.tms.auth.repository.UserRepository;
 import com.geosun.tms.auth.security.SecurityErrorWriter;
@@ -28,7 +30,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, AppEmailProperties.class, RateLimitProperties.class})
 public class SecurityConfig {
 
     @Bean

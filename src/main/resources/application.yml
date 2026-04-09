@@ -65,5 +65,6 @@ app:
     resend-verification-seconds: ${RATE_LIMIT_RESEND_VERIFICATION_SECONDS:60}
     refresh-max-requests: ${RATE_LIMIT_REFRESH_MAX_REQUESTS:30}
     refresh-window-seconds: ${RATE_LIMIT_REFRESH_WINDOW_SECONDS:60}
+    register-max-per-window: ${RATE_LIMIT_REGISTER_MAX_PER_WINDOW:30}
   cleanup:
     token-retention-days: ${TOKEN_CLEANUP_RETENTION_DAYS:30}
