@@ -47,6 +47,8 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+  show-actuator: true
+  override-with-generic-response: false
 
 app:
   security:

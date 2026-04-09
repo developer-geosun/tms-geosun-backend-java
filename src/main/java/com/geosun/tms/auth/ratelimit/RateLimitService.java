@@ -91,4 +91,16 @@ public class RateLimitService {
             dq.pollFirst();
         }
     }
+
+    /**
+     * Скидання лічильників для ізольованих інтеграційних тестів.
+     */
+    public void resetForTests() {
+        loginFailures.clear();
+        refreshHits.clear();
+        registerHits.clear();
+        synchronized (resendLastMillis) {
+            resendLastMillis.clear();
+        }
+    }
 }

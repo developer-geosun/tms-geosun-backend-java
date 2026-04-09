@@ -12,7 +12,11 @@ import com.geosun.tms.auth.dto.response.RegisterResponse;
 import com.geosun.tms.auth.dto.response.UserPublicDto;
 import com.geosun.tms.auth.infrastructure.web.ClientIpResolver;
 import com.geosun.tms.auth.security.UserPrincipal;
+import com.geosun.tms.auth.config.OpenApiConfig;
 import com.geosun.tms.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Публічні та захищені auth endpoint (префікс /api/v1/auth).
  */
+@Tag(name = "Authentication")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -39,6 +44,7 @@ public class AuthController {
         this.clientIpResolver = clientIpResolver;
     }
 
+    @Operation(summary = "Register user", description = "Creates USER; sends verification email (SMTP errors still return 201).")
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request,
                                                      HttpServletRequest httpRequest) {
@@ -46,31 +52,39 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
+    @Operation(summary = "Login", description = "Requires verified email; returns access + refresh tokens.")
     @PostMapping("/login")
     public AuthTokensResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         return authService.login(request, clientIpResolver.resolve(httpRequest));
     }
 
+    @Operation(summary = "Verify email", description = "Token only in JSON body (not URL).")
     @PostMapping("/verify-email")
     public OperationSuccessResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         return authService.verifyEmail(request);
     }
 
+    @Operation(summary = "Resend verification", description = "Anti-enumeration: same 200 for unknown or already verified email.")
     @PostMapping("/resend-verification")
     public OperationSuccessResponse resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
         return authService.resendVerification(request);
     }
 
+    @Operation(summary = "Refresh tokens", description = "Rotates refresh token; reuse of revoked token invalidates all user sessions.")
     @PostMapping("/refresh")
     public AuthTokensResponse refresh(@Valid @RequestBody RefreshRequest request, HttpServletRequest httpRequest) {
         return authService.refresh(request, clientIpResolver.resolve(httpRequest));
     }
 
+    @Operation(summary = "Logout")
+    @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
     @PostMapping("/logout")
     public LogoutResponse logout(@AuthenticationPrincipal UserPrincipal principal) {
         return authService.logout(principal);
     }
 
+    @Operation(summary = "Current user profile")
+    @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
     @GetMapping("/me")
     public UserPublicDto me(@AuthenticationPrincipal UserPrincipal principal) {
         return authService.me(principal);

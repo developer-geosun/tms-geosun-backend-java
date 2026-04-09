@@ -111,7 +111,7 @@ public class AuthService {
         String email = EmailNormalizer.normalize(request.email());
         rateLimitService.checkLoginNotBlocked(clientIp, email);
 
-        User user = userRepository.findByEmailAndDeletedFalse(email).orElse(null);
+        User user = userRepository.findTopByEmailOrderByDeletedAsc(email).orElse(null);
         if (user == null) {
             rateLimitService.recordLoginFailure(clientIp, email);
             throw ApiException.unauthorized("INVALID_CREDENTIALS", "Invalid credentials");

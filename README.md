@@ -22,3 +22,11 @@ docker compose up --build
 
 - Health: `http://localhost:8080/actuator/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+## Tests and coverage
+
+- Run all tests: `mvn test`
+- Run tests and enforce JaCoCo line coverage (bundle minimum 55%): `mvn verify`
+- HTML report after tests: `target/site/jacoco/index.html`
+
+Integration tests use profile `test` (H2 in-memory, Flyway off, mocked `JavaMailSender`). Actuator mail health is disabled in that profile so the mock does not break startup.
