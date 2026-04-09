@@ -11,7 +11,6 @@ import com.geosun.tms.auth.dto.request.ResendVerificationRequest;
 import com.geosun.tms.auth.dto.request.VerifyEmailRequest;
 import com.geosun.tms.auth.ratelimit.RateLimitService;
 import com.geosun.tms.auth.repository.UserRepository;
-import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
