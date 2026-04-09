@@ -68,3 +68,4 @@ app:
     register-max-per-window: ${RATE_LIMIT_REGISTER_MAX_PER_WINDOW:30}
   cleanup:
     token-retention-days: ${TOKEN_CLEANUP_RETENTION_DAYS:30}
+    cron: ${TOKEN_CLEANUP_CRON:0 0 2 * * *}
