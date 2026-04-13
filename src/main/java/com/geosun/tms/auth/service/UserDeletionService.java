@@ -5,6 +5,7 @@ import com.geosun.tms.auth.exception.ApiException;
 import com.geosun.tms.auth.repository.RefreshTokenRepository;
 import com.geosun.tms.auth.repository.UserRepository;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +27,15 @@ public class UserDeletionService {
 
   @Transactional
   public void softDelete(String rawId) {
+    String userId = Objects.requireNonNull(rawId, "User id must not be null");
     try {
-      UUID.fromString(rawId);
+      UUID.fromString(userId);
     } catch (IllegalArgumentException ex) {
       throw ApiException.badRequest("VALIDATION_ERROR", "Invalid user id");
     }
 
     User user =
-        userRepository.findById(rawId).orElseThrow(() -> ApiException.notFound("User not found"));
+        userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("User not found"));
 
     if (user.isDeleted()) {
       return;

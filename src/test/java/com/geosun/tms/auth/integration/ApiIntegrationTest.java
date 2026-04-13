@@ -23,6 +23,7 @@ import com.geosun.tms.auth.dto.request.ResendVerificationRequest;
 import com.geosun.tms.auth.dto.request.VerifyEmailRequest;
 import com.geosun.tms.auth.ratelimit.RateLimitService;
 import com.geosun.tms.auth.repository.UserRepository;
+import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -66,7 +68,7 @@ class ApiIntegrationTest {
   void setUp() {
     rateLimitService.resetForTests();
     org.mockito.Mockito.reset(javaMailSender);
-    doNothing().when(javaMailSender).send(any(SimpleMailMessage.class));
+    doNothing().when(javaMailSender).send(anyMailMessage());
   }
 
   @Test
@@ -79,42 +81,33 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new RegisterRequest("new@example.com", "Secret123"))))
+                .contentType(jsonContentType())
+                .content(toJson(new RegisterRequest("new@example.com", "Secret123"))))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.email").value("new@example.com"))
         .andExpect(jsonPath("$.role").value("USER"));
-    verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
+    verify(javaMailSender, times(1)).send(anyMailMessage());
   }
 
   @Test
   void register_smtpFailure_stillReturns201() throws Exception {
-    doThrow(new MailSendException("smtp down"))
-        .when(javaMailSender)
-        .send(any(SimpleMailMessage.class));
+    doThrow(new MailSendException("smtp down")).when(javaMailSender).send(anyMailMessage());
     mockMvc
         .perform(
             post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new RegisterRequest("smtp-fail@example.com", "Secret123"))))
+                .contentType(jsonContentType())
+                .content(toJson(new RegisterRequest("smtp-fail@example.com", "Secret123"))))
         .andExpect(status().isCreated());
   }
 
   @Test
   void register_duplicateEmail_returns409() throws Exception {
-    String body =
-        objectMapper.writeValueAsString(new RegisterRequest("dup@example.com", "Secret123"));
+    String body = toJson(new RegisterRequest("dup@example.com", "Secret123"));
     mockMvc
-        .perform(
-            post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        .perform(post("/api/v1/auth/register").contentType(jsonContentType()).content(body))
         .andExpect(status().isCreated());
     mockMvc
-        .perform(
-            post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON).content(body))
+        .perform(post("/api/v1/auth/register").contentType(jsonContentType()).content(body))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("CONFLICT"));
   }
@@ -124,10 +117,8 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new RegisterRequest("bad@example.com", "short"))))
+                .contentType(jsonContentType())
+                .content(toJson(new RegisterRequest("bad@example.com", "short"))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
   }
@@ -136,39 +127,34 @@ class ApiIntegrationTest {
   void login_beforeVerify_returns403() throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                objectMapper.writeValueAsString(
-                    new RegisterRequest("unverified@example.com", "Secret123"))));
+            .contentType(jsonContentType())
+            .content(toJson(new RegisterRequest("unverified@example.com", "Secret123"))));
     mockMvc
         .perform(
             post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new LoginRequest("unverified@example.com", "Secret123"))))
+                .contentType(jsonContentType())
+                .content(toJson(new LoginRequest("unverified@example.com", "Secret123"))))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("EMAIL_NOT_VERIFIED"));
   }
 
   @Test
+  @SuppressWarnings("null")
   void verify_then_login_me_logout_flow() throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                objectMapper.writeValueAsString(
-                    new RegisterRequest("flow@example.com", "Secret123"))));
+            .contentType(jsonContentType())
+            .content(toJson(new RegisterRequest("flow@example.com", "Secret123"))));
 
     ArgumentCaptor<SimpleMailMessage> mailCap = ArgumentCaptor.forClass(SimpleMailMessage.class);
     verify(javaMailSender, times(1)).send(mailCap.capture());
-    String token = extractVerificationToken(mailCap.getValue().getText());
+    String token = extractVerificationToken(requireMailText(mailCap.getValue()));
 
     mockMvc
         .perform(
             post("/api/v1/auth/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new VerifyEmailRequest(token))))
+                .contentType(jsonContentType())
+                .content(toJson(new VerifyEmailRequest(token))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
 
@@ -176,16 +162,14 @@ class ApiIntegrationTest {
         mockMvc
             .perform(
                 post("/api/v1/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        objectMapper.writeValueAsString(
-                            new LoginRequest("flow@example.com", "Secret123"))))
+                    .contentType(jsonContentType())
+                    .content(toJson(new LoginRequest("flow@example.com", "Secret123"))))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.tokenType").value("Bearer"))
             .andExpect(jsonPath("$.expiresIn").value(900))
             .andReturn();
 
-    JsonNode loginJson = objectMapper.readTree(loginResult.getResponse().getContentAsString());
+    JsonNode loginJson = objectMapper.readTree(responseBody(loginResult));
     String access = loginJson.get("accessToken").asText();
     String refresh = loginJson.get("refreshToken").asText();
 
@@ -202,8 +186,8 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new RefreshRequest(refresh))))
+                .contentType(jsonContentType())
+                .content(toJson(new RefreshRequest(refresh))))
         .andExpect(status().isUnauthorized());
   }
 
@@ -212,8 +196,8 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/verify-email")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new VerifyEmailRequest("invalid-token"))))
+                .contentType(jsonContentType())
+                .content(toJson(new VerifyEmailRequest("invalid-token"))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
   }
@@ -231,35 +215,29 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/resend-verification")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new ResendVerificationRequest("ghost@example.com"))))
+                .contentType(jsonContentType())
+                .content(toJson(new ResendVerificationRequest("ghost@example.com"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true));
-    verify(javaMailSender, times(0)).send(any(SimpleMailMessage.class));
+    verify(javaMailSender, times(0)).send(anyMailMessage());
   }
 
   @Test
   void resend_smtpFailure_returns503() throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                objectMapper.writeValueAsString(
-                    new RegisterRequest("resend503@example.com", "Secret123"))));
-    verify(javaMailSender, times(1)).send(any(SimpleMailMessage.class));
+            .contentType(jsonContentType())
+            .content(toJson(new RegisterRequest("resend503@example.com", "Secret123"))));
+    verify(javaMailSender, times(1)).send(anyMailMessage());
 
     org.mockito.Mockito.reset(javaMailSender);
-    doThrow(new MailSendException("fail")).when(javaMailSender).send(any(SimpleMailMessage.class));
+    doThrow(new MailSendException("fail")).when(javaMailSender).send(anyMailMessage());
 
     mockMvc
         .perform(
             post("/api/v1/auth/resend-verification")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new ResendVerificationRequest("resend503@example.com"))))
+                .contentType(jsonContentType())
+                .content(toJson(new ResendVerificationRequest("resend503@example.com"))))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("EMAIL_DELIVERY_FAILED"));
   }
@@ -273,58 +251,55 @@ class ApiIntegrationTest {
         mockMvc
             .perform(
                 post("/api/v1/auth/refresh")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(new RefreshRequest(s0.refresh()))))
+                    .contentType(jsonContentType())
+                    .content(toJson(new RefreshRequest(s0.refresh()))))
             .andExpect(status().isOk())
             .andReturn();
-    JsonNode j1 = objectMapper.readTree(r1.getResponse().getContentAsString());
+    JsonNode j1 = objectMapper.readTree(responseBody(r1));
     String refresh1 = j1.get("refreshToken").asText();
 
     mockMvc
         .perform(
             post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new RefreshRequest(s0.refresh()))))
+                .contentType(jsonContentType())
+                .content(toJson(new RefreshRequest(s0.refresh()))))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("INVALID_SESSION"));
 
     mockMvc
         .perform(
             post("/api/v1/auth/refresh")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new RefreshRequest(refresh1))))
+                .contentType(jsonContentType())
+                .content(toJson(new RefreshRequest(refresh1))))
         .andExpect(status().isUnauthorized());
   }
 
   @Test
+  @SuppressWarnings("null")
   void login_wrongPassword_then_rateLimited() throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(
-                objectMapper.writeValueAsString(
-                    new RegisterRequest("ratelimit@example.com", "Secret123"))));
+            .contentType(jsonContentType())
+            .content(toJson(new RegisterRequest("ratelimit@example.com", "Secret123"))));
     ArgumentCaptor<SimpleMailMessage> cap = ArgumentCaptor.forClass(SimpleMailMessage.class);
     verify(javaMailSender).send(cap.capture());
     mockMvc.perform(
         post("/api/v1/auth/verify-email")
-            .contentType(MediaType.APPLICATION_JSON)
+            .contentType(jsonContentType())
             .content(
-                objectMapper.writeValueAsString(
-                    new VerifyEmailRequest(extractVerificationToken(cap.getValue().getText())))));
+                toJson(
+                    new VerifyEmailRequest(
+                        extractVerificationToken(requireMailText(cap.getValue()))))));
 
-    String loginBody =
-        objectMapper.writeValueAsString(new LoginRequest("ratelimit@example.com", "WrongPass99"));
+    String loginBody = toJson(new LoginRequest("ratelimit@example.com", "WrongPass99"));
     for (int i = 0; i < 5; i++) {
       mockMvc
-          .perform(
-              post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
+          .perform(post("/api/v1/auth/login").contentType(jsonContentType()).content(loginBody))
           .andExpect(status().isUnauthorized())
           .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
     }
     mockMvc
-        .perform(
-            post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(loginBody))
+        .perform(post("/api/v1/auth/login").contentType(jsonContentType()).content(loginBody))
         .andExpect(status().isTooManyRequests())
         .andExpect(jsonPath("$.code").value("RATE_LIMIT_EXCEEDED"));
   }
@@ -342,10 +317,8 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new LoginRequest("disabled@example.com", "Secret123"))))
+                .contentType(jsonContentType())
+                .content(toJson(new LoginRequest("disabled@example.com", "Secret123"))))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCOUNT_DISABLED"));
   }
@@ -364,10 +337,8 @@ class ApiIntegrationTest {
     mockMvc
         .perform(
             post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    objectMapper.writeValueAsString(
-                        new LoginRequest("deletedlogin@example.com", "Secret123"))))
+                .contentType(jsonContentType())
+                .content(toJson(new LoginRequest("deletedlogin@example.com", "Secret123"))))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("USER_DELETED"));
   }
@@ -427,20 +398,21 @@ class ApiIntegrationTest {
         .andExpect(jsonPath("$.code").value("FORBIDDEN"));
   }
 
+  @SuppressWarnings("null")
   private void registerVerifyLogin(String email) throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(new RegisterRequest(email, "Secret123"))));
+            .contentType(jsonContentType())
+            .content(toJson(new RegisterRequest(email, "Secret123"))));
     ArgumentCaptor<SimpleMailMessage> cap = ArgumentCaptor.forClass(SimpleMailMessage.class);
     verify(javaMailSender, times(1)).send(cap.capture());
-    String token = extractVerificationToken(cap.getValue().getText());
+    String token = extractVerificationToken(requireMailText(cap.getValue()));
     mockMvc.perform(
         post("/api/v1/auth/verify-email")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(new VerifyEmailRequest(token))));
+            .contentType(jsonContentType())
+            .content(toJson(new VerifyEmailRequest(token))));
     org.mockito.Mockito.reset(javaMailSender);
-    doNothing().when(javaMailSender).send(any(SimpleMailMessage.class));
+    doNothing().when(javaMailSender).send(anyMailMessage());
   }
 
   private Session login(String email, String password) throws Exception {
@@ -448,11 +420,11 @@ class ApiIntegrationTest {
         mockMvc
             .perform(
                 post("/api/v1/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(new LoginRequest(email, password))))
+                    .contentType(jsonContentType())
+                    .content(toJson(new LoginRequest(email, password))))
             .andExpect(status().isOk())
             .andReturn();
-    JsonNode n = objectMapper.readTree(r.getResponse().getContentAsString());
+    JsonNode n = objectMapper.readTree(responseBody(r));
     return new Session(n.get("accessToken").asText(), n.get("refreshToken").asText());
   }
 
@@ -460,6 +432,36 @@ class ApiIntegrationTest {
     int idx = mailText.lastIndexOf("\n\n");
     assertThat(idx).isGreaterThan(-1);
     return mailText.substring(idx + 2).trim();
+  }
+
+  @NonNull
+  private MediaType jsonContentType() {
+    return Objects.requireNonNull(MediaType.APPLICATION_JSON);
+  }
+
+  @NonNull
+  private String toJson(@NonNull Object value) throws Exception {
+    return Objects.requireNonNull(objectMapper.writeValueAsString(value));
+  }
+
+  @NonNull
+  private static String responseBody(@NonNull MvcResult result) {
+    try {
+      return Objects.requireNonNull(result.getResponse().getContentAsString());
+    } catch (java.io.UnsupportedEncodingException ex) {
+      throw new IllegalStateException("Cannot read response body", ex);
+    }
+  }
+
+  @NonNull
+  private static String requireMailText(@NonNull SimpleMailMessage message) {
+    return Objects.requireNonNull(message.getText());
+  }
+
+  @SuppressWarnings("null")
+  @NonNull
+  private static SimpleMailMessage anyMailMessage() {
+    return (SimpleMailMessage) any(SimpleMailMessage.class);
   }
 
   private record Session(String access, String refresh) {}
