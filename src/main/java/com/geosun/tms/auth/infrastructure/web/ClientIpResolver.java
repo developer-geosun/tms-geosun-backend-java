@@ -10,15 +10,15 @@ import org.springframework.util.StringUtils;
 @Component
 public class ClientIpResolver {
 
-    public String resolve(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (StringUtils.hasText(forwarded)) {
-            String first = forwarded.split(",")[0].trim();
-            if (StringUtils.hasText(first)) {
-                return first;
-            }
-        }
-        String ip = request.getRemoteAddr();
-        return ip != null ? ip : "unknown";
+  public String resolve(HttpServletRequest request) {
+    String forwarded = request.getHeader("X-Forwarded-For");
+    if (StringUtils.hasText(forwarded)) {
+      String first = forwarded.split(",")[0].trim();
+      if (StringUtils.hasText(first)) {
+        return first;
+      }
     }
+    String ip = request.getRemoteAddr();
+    return ip != null ? ip : "unknown";
+  }
 }

@@ -8,15 +8,14 @@ import java.util.Base64;
  */
 public final class OpaqueTokenGenerator {
 
-    private static final SecureRandom RANDOM = new SecureRandom();
-    private static final int BYTES = 32;
+  private static final SecureRandom RANDOM = new SecureRandom();
+  private static final int BYTES = 32;
 
-    private OpaqueTokenGenerator() {
-    }
+  private OpaqueTokenGenerator() {}
 
-    public static String generate() {
-        byte[] buf = new byte[BYTES];
-        RANDOM.nextBytes(buf);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
-    }
+  public static String generate() {
+    byte[] buf = new byte[BYTES];
+    RANDOM.nextBytes(buf);
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
+  }
 }

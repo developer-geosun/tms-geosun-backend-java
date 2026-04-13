@@ -6,8 +6,4 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Тіло {@code POST /api/v1/auth/login}.
  */
-public record LoginRequest(
-        @NotBlank @Email String email,
-        @NotBlank String password
-) {
-}
+public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}

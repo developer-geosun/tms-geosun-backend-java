@@ -9,28 +9,19 @@ import com.geosun.tms.auth.dto.response.UserPublicDto;
  */
 public final class UserDtoMapper {
 
-    private UserDtoMapper() {
-    }
+  private UserDtoMapper() {}
 
-    public static UserPublicDto toPublicDto(User user) {
-        if (user == null) {
-            return null;
-        }
-        return new UserPublicDto(
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name()
-        );
+  public static UserPublicDto toPublicDto(User user) {
+    if (user == null) {
+      return null;
     }
+    return new UserPublicDto(user.getId(), user.getEmail(), user.getRole().name());
+  }
 
-    public static RegisterResponse toRegisterResponse(User user) {
-        if (user == null) {
-            return null;
-        }
-        return new RegisterResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name()
-        );
+  public static RegisterResponse toRegisterResponse(User user) {
+    if (user == null) {
+      return null;
     }
+    return new RegisterResponse(user.getId(), user.getEmail(), user.getRole().name());
+  }
 }

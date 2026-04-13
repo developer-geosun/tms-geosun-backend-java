@@ -6,9 +6,4 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Тіло {@code POST /api/v1/auth/refresh}.
  */
-public record RefreshRequest(
-        @NotBlank
-        @JsonProperty("refreshToken")
-        String refreshToken
-) {
-}
+public record RefreshRequest(@NotBlank @JsonProperty("refreshToken") String refreshToken) {}

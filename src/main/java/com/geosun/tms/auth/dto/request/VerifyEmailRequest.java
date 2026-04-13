@@ -5,7 +5,4 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Тіло {@code POST /api/v1/auth/verify-email}.
  */
-public record VerifyEmailRequest(
-        @NotBlank String token
-) {
-}
+public record VerifyEmailRequest(@NotBlank String token) {}

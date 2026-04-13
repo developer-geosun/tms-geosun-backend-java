@@ -10,5 +10,4 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Configuration
 @EnableScheduling
 @EnableConfigurationProperties(CleanupProperties.class)
-public class SchedulingConfig {
-}
+public class SchedulingConfig {}

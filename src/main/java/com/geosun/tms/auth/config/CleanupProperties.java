@@ -8,29 +8,29 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.cleanup")
 public class CleanupProperties {
 
-    /**
-     * Скільки днів зберігати рядки після expiry/revoke/used згідно ТЗ.
-     */
-    private int tokenRetentionDays = 30;
+  /**
+   * Скільки днів зберігати рядки після expiry/revoke/used згідно ТЗ.
+   */
+  private int tokenRetentionDays = 30;
 
-    /**
-     * Cron для щоденного запуску (за замовчуванням 02:00 UTC).
-     */
-    private String cron = "0 0 2 * * *";
+  /**
+   * Cron для щоденного запуску (за замовчуванням 02:00 UTC).
+   */
+  private String cron = "0 0 2 * * *";
 
-    public int getTokenRetentionDays() {
-        return tokenRetentionDays;
-    }
+  public int getTokenRetentionDays() {
+    return tokenRetentionDays;
+  }
 
-    public void setTokenRetentionDays(int tokenRetentionDays) {
-        this.tokenRetentionDays = tokenRetentionDays;
-    }
+  public void setTokenRetentionDays(int tokenRetentionDays) {
+    this.tokenRetentionDays = tokenRetentionDays;
+  }
 
-    public String getCron() {
-        return cron;
-    }
+  public String getCron() {
+    return cron;
+  }
 
-    public void setCron(String cron) {
-        this.cron = cron;
-    }
+  public void setCron(String cron) {
+    this.cron = cron;
+  }
 }

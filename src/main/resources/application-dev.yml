@@ -2,6 +2,12 @@ spring:
   jpa:
     show-sql: true
 
+# Без SMTP (MailHog тощо) індикатор mail дає DOWN → /actuator/health повертає 503
+management:
+  health:
+    mail:
+      enabled: false
+
 logging:
   level:
     root: INFO

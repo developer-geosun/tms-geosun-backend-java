@@ -1,0 +1,15 @@
+-- Hibernate при ddl-auto=validate очікує VARCHAR(36) для String id, а V1 створив CHAR(36) — узгоджуємо типи.
+
+SET @OLD_FOREIGN_KEY_CHECKS = @@FOREIGN_KEY_CHECKS;
+SET FOREIGN_KEY_CHECKS = 0;
+
+ALTER TABLE email_verification_tokens MODIFY COLUMN id VARCHAR(36) NOT NULL;
+ALTER TABLE email_verification_tokens MODIFY COLUMN user_id VARCHAR(36) NOT NULL;
+
+ALTER TABLE refresh_tokens MODIFY COLUMN id VARCHAR(36) NOT NULL;
+ALTER TABLE refresh_tokens MODIFY COLUMN user_id VARCHAR(36) NOT NULL;
+ALTER TABLE refresh_tokens MODIFY COLUMN replaced_by_token_id VARCHAR(36) NULL;
+
+ALTER TABLE users MODIFY COLUMN id VARCHAR(36) NOT NULL;
+
+SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;

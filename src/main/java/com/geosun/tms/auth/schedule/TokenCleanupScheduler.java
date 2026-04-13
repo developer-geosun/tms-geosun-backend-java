@@ -10,14 +10,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class TokenCleanupScheduler {
 
-    private final TokenCleanupService tokenCleanupService;
+  private final TokenCleanupService tokenCleanupService;
 
-    public TokenCleanupScheduler(TokenCleanupService tokenCleanupService) {
-        this.tokenCleanupService = tokenCleanupService;
-    }
+  public TokenCleanupScheduler(TokenCleanupService tokenCleanupService) {
+    this.tokenCleanupService = tokenCleanupService;
+  }
 
-    @Scheduled(cron = "${app.cleanup.cron}")
-    public void runScheduledCleanup() {
-        tokenCleanupService.purgeOldTokenRows();
-    }
+  @Scheduled(cron = "${app.cleanup.cron}")
+  public void runScheduledCleanup() {
+    tokenCleanupService.purgeOldTokenRows();
+  }
 }

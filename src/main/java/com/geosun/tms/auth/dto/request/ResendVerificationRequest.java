@@ -6,7 +6,4 @@ import jakarta.validation.constraints.NotBlank;
 /**
  * Тіло {@code POST /api/v1/auth/resend-verification}.
  */
-public record ResendVerificationRequest(
-        @NotBlank @Email String email
-) {
-}
+public record ResendVerificationRequest(@NotBlank @Email String email) {}

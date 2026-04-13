@@ -10,19 +10,18 @@ import java.util.HexFormat;
  */
 public final class TokenHasher {
 
-    private TokenHasher() {
-    }
+  private TokenHasher() {}
 
-    public static String sha256Hex(String raw) {
-        if (raw == null) {
-            throw new IllegalArgumentException("raw token must not be null");
-        }
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
+  public static String sha256Hex(String raw) {
+    if (raw == null) {
+      throw new IllegalArgumentException("raw token must not be null");
     }
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
+      return HexFormat.of().formatHex(hash);
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 not available", e);
+    }
+  }
 }

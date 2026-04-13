@@ -5,10 +5,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Відповідь {@code 201} після реєстрації.
  */
-public record RegisterResponse(
-        String id,
-        String email,
-        @JsonProperty("role")
-        String roleName
-) {
-}
+public record RegisterResponse(String id, String email, @JsonProperty("role") String roleName) {}

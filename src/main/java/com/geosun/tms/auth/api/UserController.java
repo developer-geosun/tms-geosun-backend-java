@@ -19,17 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/users")
 public class UserController {
 
-    private final UserDeletionService userDeletionService;
+  private final UserDeletionService userDeletionService;
 
-    public UserController(UserDeletionService userDeletionService) {
-        this.userDeletionService = userDeletionService;
-    }
+  public UserController(UserDeletionService userDeletionService) {
+    this.userDeletionService = userDeletionService;
+  }
 
-    @Operation(summary = "Soft-delete user", description = "ADMIN only; idempotent 204.")
-    @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> softDelete(@PathVariable("id") String id) {
-        userDeletionService.softDelete(id);
-        return ResponseEntity.noContent().build();
-    }
+  @Operation(summary = "Soft-delete user", description = "ADMIN only; idempotent 204.")
+  @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> softDelete(@PathVariable("id") String id) {
+    userDeletionService.softDelete(id);
+    return ResponseEntity.noContent().build();
+  }
 }

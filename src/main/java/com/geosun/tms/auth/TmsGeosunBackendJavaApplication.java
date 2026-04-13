@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServic
 @SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
 public class TmsGeosunBackendJavaApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(TmsGeosunBackendJavaApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(TmsGeosunBackendJavaApplication.class, args);
+  }
 }
