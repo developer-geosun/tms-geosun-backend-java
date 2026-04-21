@@ -1,32 +1,61 @@
 # tms-geosun-backend-java
 
-MVP backend for authentication and authorization based on Java 21 + Spring Boot 3.
+MVP backend для аутентификации и авторизации на базе Java 21 + Spring Boot 3.
 
-## Local run (without Docker)
+## Локальный запуск (без Docker)
 
-1. Ensure MySQL 8 is running.
-2. Copy `.env.example` values into your environment.
-3. Run:
+1. Убедитесь, что запущен MySQL 8.
+2. Скопируйте значения из `.env.example` в переменные окружения.
+3. Запустите:
 
 ```bash
 mvn spring-boot:run
 ```
 
-## Local run (Docker Compose)
+## Локальный запуск (Docker Compose)
 
 ```bash
 docker compose up --build
 ```
 
-## Useful endpoints
+## Полезные endpoints
 
 - Health: `http://localhost:8080/actuator/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-## Tests and coverage
+## Использование Postman-коллекции
 
-- Run all tests: `mvn test`
-- Run tests and enforce JaCoCo line coverage (bundle minimum 55%): `mvn verify`
-- HTML report after tests: `target/site/jacoco/index.html`
+В репозитории есть готовые файлы для тестирования потока аутентификации:
 
-Integration tests use profile `test` (H2 in-memory, Flyway off, mocked `JavaMailSender`). Actuator mail health is disabled in that profile so the mock does not break startup.
+- Коллекция: `postman_collection_auth.json`
+- Окружение: `postman_environment_local.json`
+
+Как запустить:
+
+1. Запустите backend локально (например, `mvn spring-boot:run`).
+2. В Postman импортируйте оба файла из корня репозитория.
+3. Выберите окружение `tms-geosun-backend-java local`.
+4. При необходимости измените `baseUrl`, `testEmail` и `testPassword`.
+5. Выполняйте запросы по порядку:
+   - `01 - Health`
+   - `02 - Register`
+   - `03 - Resend verification`
+   - `04 - Verify email (manual token)` (подставьте `verifyToken` из email/логов)
+   - `05 - Login`
+   - `06 - Me`
+   - `07 - Refresh`
+   - `08 - Logout`
+
+Примечания:
+
+- `05 - Login` и `07 - Refresh` автоматически обновляют `accessToken` и `refreshToken` в выбранном окружении.
+- `06 - Me` и `08 - Logout` используют Bearer-авторизацию с `{{accessToken}}`.
+- Если регистрация не проходит из-за уже существующего пользователя, измените `testEmail` и снова начните с `02 - Register`.
+
+## Тесты и покрытие
+
+- Запустить все тесты: `mvn test`
+- Запустить тесты и проверить порог покрытия JaCoCo (минимум 55% по bundle): `mvn verify`
+- HTML-отчет после тестов: `target/site/jacoco/index.html`
+
+Интеграционные тесты используют профиль `test` (H2 in-memory, Flyway выключен, `JavaMailSender` замокан). В этом профиле отключен mail health для Actuator, чтобы мок не ломал запуск приложения.
